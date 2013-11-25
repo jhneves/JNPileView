@@ -48,6 +48,10 @@ typedef NS_ENUM(NSInteger, JNPileViewDiscardSide)
 /// The default value is XX.
 @property (nonatomic, assign) CGFloat discardTranslation;
 
+/// The rotation is attenuated as the touch gets closer to the center
+/// The default value is NO.
+@property (nonatomic, assign) BOOL attenuatesRotationBasedOnLocationOfTouch;
+
 
 /// Reload everything from scratch.
 - (void)reloadData;

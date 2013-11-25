@@ -22,7 +22,7 @@
     /// Rotation flags for the handled view
     struct {
         CGFloat direction; /// The direction to rotate
-        CGFloat factor; /// How much to attenuate the rotation
+        CGFloat attenuationFactor; /// How much to attenuate the rotation
     } _rotationFlags;
 }
 @end
@@ -120,7 +120,7 @@ static CGFloat _DegToRad(CGFloat degrees)
         
         /// The attenuation factor is based on the distance of the touch to the center of the view (on the y-axis)
         /// The further from the center, the bigger the factor is
-        _rotationFlags.factor = fabsf(touchLocationHandledView.y - centerHandledView) / centerHandledView;
+        _rotationFlags.attenuationFactor = fabsf(touchLocationHandledView.y - centerHandledView) / centerHandledView;
     }
     
     /// Handle pan
@@ -136,7 +136,10 @@ static CGFloat _DegToRad(CGFloat degrees)
         
         /// Rotation
         /// If the touch is above the center or under the rotation angle varies
-        const CGFloat rot = (translation.x * .1 * _rotationFlags.factor) * _rotationFlags.direction;
+        CGFloat rot = (translation.x * .1) * _rotationFlags.direction;
+        if (self.attenuatesRotationBasedOnLocationOfTouch) {
+            rot *= _rotationFlags.attenuationFactor;
+        }
         handledView.transform = CGAffineTransformMakeRotation(_DegToRad(rot));
         
         /// Fade out as it aproximate to borders
