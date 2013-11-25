@@ -24,6 +24,12 @@
         CGFloat direction; /// The direction to rotate
         CGFloat attenuationFactor; /// How much to attenuate the rotation
     } _rotationFlags;
+   
+    /// The flags to handle the boundaries for discarding a view
+    struct {
+        BOOL reachedDiscard; /// Flag to indicate if the translation reached the mininum value necessary to discard
+        BOOL previousReachedDiscard; /// Flag to hold the previous value for the flag above
+    } _boundaryFlags;
 }
 @end
 
@@ -121,10 +127,29 @@ static CGFloat _DegToRad(CGFloat degrees)
         /// The attenuation factor is based on the distance of the touch to the center of the view (on the y-axis)
         /// The further from the center, the bigger the factor is
         _rotationFlags.attenuationFactor = fabsf(touchLocationHandledView.y - centerHandledView) / centerHandledView;
+        
+        /// Start value
+        _boundaryFlags.reachedDiscard =
+        _boundaryFlags.previousReachedDiscard = NO;
     }
     
     /// Handle pan
     else if (panGesture.state == UIGestureRecognizerStateChanged) {
+        
+        /// Calculate if the boundary has been reached
+        _boundaryFlags.reachedDiscard = fabsf(translation.x) > self.discardTranslation;
+        
+        /// Tell delegate if crossed the discard boundaries
+        if (_boundaryFlags.reachedDiscard != _boundaryFlags.previousReachedDiscard) {
+            
+            /// Hold the current value
+            _boundaryFlags.previousReachedDiscard = _boundaryFlags.reachedDiscard;
+            
+            /// Tell the delegate we crossed boundaries
+            if ([_delegate respondsToSelector:@selector(pileView:didCrossDiscardBoundaries:forView:)]) {
+                [_delegate pileView:self didCrossDiscardBoundaries:_boundaryFlags.reachedDiscard forView:handledView];
+            }
+        }
         
         /// Set position
         CGFloat x = __CENTER_X + translation.x;
@@ -158,14 +183,10 @@ static CGFloat _DegToRad(CGFloat degrees)
     else if (panGesture.state == UIGestureRecognizerStateEnded) {
         
         /// Should discard?
-        BOOL willDiscard = NO;
-        if (fabsf(translation.x) > self.discardTranslation) {
-            willDiscard = [self discardView:handledView];
-        }
-        
-        /// If not its not going to be discarded then re-center it
-        if (!willDiscard) {
-            
+        if (_boundaryFlags.reachedDiscard) {
+            [self discardView:handledView];
+        } else {
+            /// If not its not going to be discarded then re-center it
             [self centerView:handledView animated:YES];
         }
     }
