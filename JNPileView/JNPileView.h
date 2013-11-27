@@ -32,6 +32,9 @@ typedef NS_ENUM(NSInteger, JNPileViewDiscardSide)
 /// Called when the view is about the be displayed and become the top view on the pile
 - (void)pileView:(JNPileView*)pileview willShowView:(UIView*)view forIndex:(NSInteger)index;
 
+/// Called whenever the view being handled is moved
+- (void)pileView:(JNPileView*)pileView translated:(CGFloat)translation forView:(UIView*)view;
+
 /// This method is called when the discard translation is crossed either inside or outside
 /// If it crossed outside the view did reach the mininum value necessary to be discarded
 /// This method is usefull to play a little sound indicating the boundaries for discarding has been crossed
@@ -55,6 +58,10 @@ typedef NS_ENUM(NSInteger, JNPileViewDiscardSide)
 /// The mininum translation to discard a view
 /// The default value is XX.
 @property (nonatomic, assign) CGFloat discardTranslation;
+
+/// The hanlded view becomes trasnparent as it gets away from the center
+/// Default value is YES.
+@property (nonatomic, assign) CGFloat applyAlphaFactorForHandledView;
 
 /// The rotation is attenuated as the touch gets closer to the center
 /// The default value is NO.

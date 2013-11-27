@@ -57,8 +57,9 @@ static CGFloat _DegToRad(CGFloat degrees)
         /// Initialize views array
         _views = [NSMutableArray array];
         
-        /// Default value
+        /// Default values
         self.discardTranslation = 90;
+        self.applyAlphaFactorForHandledView = YES;
         
         /// Adds the pan gesture
         UIPanGestureRecognizer* panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePanGesture:)];
@@ -136,6 +137,11 @@ static CGFloat _DegToRad(CGFloat degrees)
     /// Handle pan
     else if (panGesture.state == UIGestureRecognizerStateChanged) {
         
+        /// Inform delegate about the translation
+        if ([_delegate respondsToSelector:@selector(pileView:translated:forView:)]) {
+            [_delegate pileView:self translated:translation.x forView:handledView];
+        }
+        
         /// Calculate if the boundary has been reached
         _boundaryFlags.reachedDiscard = fabsf(translation.x) > self.discardTranslation;
         
@@ -175,8 +181,10 @@ static CGFloat _DegToRad(CGFloat degrees)
             distanceFromCenter = p.x - __CENTER_X;
         }
         
-        const CGFloat minimumAlpha = .75; /// should be a value between 0 and 1
-        handledView.alpha = 1 - ((distanceFromCenter / __CENTER_X) * (1 - minimumAlpha));
+        if (self.applyAlphaFactorForHandledView) {
+            const CGFloat minimumAlpha = .75; /// should be a value between 0 and 1
+            handledView.alpha = 1 - ((distanceFromCenter / __CENTER_X) * (1 - minimumAlpha));
+        }
     }
     
     /// Discard if the gesture ended on the discard area
@@ -263,6 +271,13 @@ static CGFloat _DegToRad(CGFloat degrees)
 
 - (void)centerView:(UIView*)view animated:(BOOL)isAnimated
 {
+    /// Since the view is going to be centered
+    /// Tell the delegate we had a 0 translation
+    if ([_delegate respondsToSelector:@selector(pileView:translated:forView:)]) {
+        [_delegate pileView:self translated:0 forView:view];
+    }
+    
+    /// Block to center the view
     void (^DoCenter)() = ^() {
     
         view.center = CGPointMake(__CENTER_X, __CENTER_Y);
@@ -292,11 +307,6 @@ static CGFloat _DegToRad(CGFloat degrees)
     /// Discard if enabled
     if (canDiscard) {
         
-        /// Notify delegate the view will be discarded
-        if ([_delegate respondsToSelector:@selector(pileView:willDiscardView:forSide:)]) {
-            [_delegate pileView:self willDiscardView:view forSide:discardSide];
-        }
-        
         /// Remove it from the array
         [self removeViewFromPileArray:view];
         
@@ -305,6 +315,11 @@ static CGFloat _DegToRad(CGFloat degrees)
         
         /// Animate discard
         [UIView animateWithDuration:.3 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
+            
+            /// Notify delegate the view will be discarded
+            if ([_delegate respondsToSelector:@selector(pileView:willDiscardView:forSide:)]) {
+                [_delegate pileView:self willDiscardView:view forSide:discardSide];
+            }
             
             CGPoint center = view.center;
             
@@ -325,7 +340,9 @@ static CGFloat _DegToRad(CGFloat degrees)
             view.transform = CGAffineTransformMakeRotation(angle);
             
             /// Make it dissapear
-            view.alpha = 0;
+            if (self.applyAlphaFactorForHandledView) {
+                view.alpha = 0;
+            }
             
         } completion:^(BOOL finished) {
             
