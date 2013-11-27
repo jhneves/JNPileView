@@ -210,10 +210,12 @@ static CGFloat _DegToRad(CGFloat degrees)
 
     /// Add the fetched view to the pile
     UIView* fetchedView = [_delegate pileView:self viewForIndex:_pileFlags.fetchIndex];
-    [self addViewToPile:fetchedView];
-    
+
     /// Increase fetch index
     ++_pileFlags.fetchIndex;
+    
+    /// Add the fetched view to the pile
+    [self addViewToPile:fetchedView];
     
     return YES;
 }
@@ -229,10 +231,34 @@ static CGFloat _DegToRad(CGFloat degrees)
     }
     else {
         [self addSubview:view];
+        
+        /// If this is the top view tell the delegate it will be shown
+        [self notifityViewWillBeShown:view];
     }
     
     /// Center it
     [self centerView:view animated:NO];
+}
+
+- (void)removeViewFromPileArray:(UIView*)view
+{
+    /// Grab original index
+    NSInteger idx = [_views indexOfObject:view];
+    
+    /// Remove from the array
+    [_views removeObject:view];
+    
+    /// If we removed the top view on the pile tell the delegate we will show a new one (if theres any)
+    if (idx == 0 && _views.count > 0) {
+        [self notifityViewWillBeShown:_views[0]];
+    }
+}
+
+- (void)notifityViewWillBeShown:(UIView*)view
+{
+    if ([_delegate respondsToSelector:@selector(pileView:willShowView:forIndex:)]) {
+        [_delegate pileView:self willShowView:view forIndex:_pileFlags.fetchIndex - 1];
+    }
 }
 
 - (void)centerView:(UIView*)view animated:(BOOL)isAnimated
@@ -271,11 +297,11 @@ static CGFloat _DegToRad(CGFloat degrees)
             [_delegate pileView:self willDiscardView:view forSide:discardSide];
         }
         
+        /// Remove it from the array
+        [self removeViewFromPileArray:view];
+        
         /// Fetch a new view
         [self fetchView];
-                
-        /// Remove it from the array
-        [_views removeObject:view];
         
         /// Animate discard
         [UIView animateWithDuration:.3 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{

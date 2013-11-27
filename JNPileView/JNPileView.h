@@ -29,6 +29,9 @@ typedef NS_ENUM(NSInteger, JNPileViewDiscardSide)
 
 @optional
 
+/// Called when the view is about the be displayed and become the top view on the pile
+- (void)pileView:(JNPileView*)pileview willShowView:(UIView*)view forIndex:(NSInteger)index;
+
 /// This method is called when the discard translation is crossed either inside or outside
 /// If it crossed outside the view did reach the mininum value necessary to be discarded
 /// This method is usefull to play a little sound indicating the boundaries for discarding has been crossed
