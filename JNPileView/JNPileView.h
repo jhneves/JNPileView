@@ -43,9 +43,6 @@ typedef NS_ENUM(NSInteger, JNPileViewDiscardSide)
 /// Return true to discard the view for the specified area
 - (BOOL)pileView:(JNPileView*)pileview shouldDiscardView:(UIView*)view forSide:(JNPileViewDiscardSide)side;
 
-/// Called before the discard animation starts
-- (void)pileView:(JNPileView*)pileView willDiscardView:(UIView*)view forSide:(JNPileViewDiscardSide)side;
-
 /// Called when the discard animation finishes
 - (void)pileView:(JNPileView*)pileView didDiscardView:(UIView*)view forSide:(JNPileViewDiscardSide)side;
 
@@ -67,6 +64,11 @@ typedef NS_ENUM(NSInteger, JNPileViewDiscardSide)
 /// The default value is NO.
 @property (nonatomic, assign) BOOL attenuatesRotationBasedOnLocationOfTouch;
 
+/// The top view on the pile (the handled view)
+- (UIView*)firstView;
+
+/// The view below the top view on the pile
+- (UIView*)secondView;
 
 /// Reload everything from scratch.
 - (void)reloadData;

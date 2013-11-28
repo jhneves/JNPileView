@@ -80,6 +80,22 @@ static CGFloat _DegToRad(CGFloat degrees)
 
 #pragma mark - Public Methods
 
+- (UIView*)firstView
+{
+    if (_views.count >= 1) {
+        return _views[0];
+    }
+    return nil;
+}
+
+- (UIView*)secondView
+{
+    if (_views.count >= 2) {
+        return _views[1];
+    }
+    return nil;
+}
+
 - (void)reloadData
 {
     /// Get rid of all views
@@ -282,7 +298,10 @@ static CGFloat _DegToRad(CGFloat degrees)
     
         view.center = CGPointMake(__CENTER_X, __CENTER_Y);
         view.transform = CGAffineTransformMakeRotation(0);
-        view.alpha = 1;
+        
+        if (self.applyAlphaFactorForHandledView) {
+            view.alpha = 1;
+        }
     };
     
     if (isAnimated == NO) {
@@ -315,11 +334,6 @@ static CGFloat _DegToRad(CGFloat degrees)
         
         /// Animate discard
         [UIView animateWithDuration:.3 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
-            
-            /// Notify delegate the view will be discarded
-            if ([_delegate respondsToSelector:@selector(pileView:willDiscardView:forSide:)]) {
-                [_delegate pileView:self willDiscardView:view forSide:discardSide];
-            }
             
             CGPoint center = view.center;
             
