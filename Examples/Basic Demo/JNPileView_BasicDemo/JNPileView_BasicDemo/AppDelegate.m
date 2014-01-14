@@ -1,9 +1,9 @@
 //
 //  AppDelegate.m
-//  JNPileView_dev
+//  JNPileView_BasicDemo
 //
-//  Created by Joao Neves on 22/11/13.
-//  Copyright (c) 2013 JHNeves. All rights reserved.
+//  Created by Joao Neves on 14/01/14.
+//  Copyright (c) 2014 JHNeves. All rights reserved.
 //
 
 #import "AppDelegate.h"

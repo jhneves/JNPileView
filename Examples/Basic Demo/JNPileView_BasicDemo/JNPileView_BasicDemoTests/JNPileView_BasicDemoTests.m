@@ -1,18 +1,18 @@
 //
-//  JNPileView_devTests.m
-//  JNPileView_devTests
+//  JNPileView_BasicDemoTests.m
+//  JNPileView_BasicDemoTests
 //
-//  Created by Joao Neves on 22/11/13.
-//  Copyright (c) 2013 JHNeves. All rights reserved.
+//  Created by Joao Neves on 14/01/14.
+//  Copyright (c) 2014 JHNeves. All rights reserved.
 //
 
 #import <XCTest/XCTest.h>
 
-@interface JNPileView_devTests : XCTestCase
+@interface JNPileView_BasicDemoTests : XCTestCase
 
 @end
 
-@implementation JNPileView_devTests
+@implementation JNPileView_BasicDemoTests
 
 - (void)setUp
 {

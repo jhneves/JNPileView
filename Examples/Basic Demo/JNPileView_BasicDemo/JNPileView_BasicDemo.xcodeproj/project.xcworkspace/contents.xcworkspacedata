@@ -2,6 +2,6 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "self:JNPileView_dev.xcodeproj">
+      location = "self:JNPileView_BasicDemo.xcodeproj">
    </FileRef>
 </Workspace>
