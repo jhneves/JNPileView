@@ -1,6 +1,5 @@
 //
 //  JNPileView.m
-//  InstaBeans
 //
 //  Created by Joao Neves on 20/11/13.
 //  Copyright (c) 2013 JHNeves. All rights reserved.
@@ -30,7 +29,24 @@
         BOOL reachedDiscard; /// Flag to indicate if the translation reached the mininum value necessary to discard
         BOOL previousReachedDiscard; /// Flag to hold the previous value for the flag above
     } _boundaryFlags;
+    
+    BOOL _loadedOnFirstAppear;
 }
+@end
+
+
+/// Views wrapper
+@interface JNPileViewWrapper : NSObject
+
+/// The view itself
+@property (nonatomic, retain) UIView* view;
+
+/// The index this view was fetched for
+@property (nonatomic, assign) NSInteger fetchIndex;
+
+@end
+
+@implementation JNPileViewWrapper
 @end
 
 
@@ -60,6 +76,7 @@ static CGFloat _DegToRad(CGFloat degrees)
         /// Default values
         self.discardTranslation = 90;
         self.applyAlphaFactorForHandledView = YES;
+        self.attenuatesRotationBasedOnLocationOfTouch = NO;
         
         /// Adds the pan gesture
         UIPanGestureRecognizer* panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePanGesture:)];
@@ -73,8 +90,11 @@ static CGFloat _DegToRad(CGFloat degrees)
 {
     [super willMoveToSuperview:newSuperview];
     
-    /// Reload data when appearing
-    [self reloadData];
+    /// Load data once when appearing for the first time
+    if (!_loadedOnFirstAppear) {
+        [self reloadData];
+        _loadedOnFirstAppear = YES;
+    }
 }
 
 
@@ -83,7 +103,8 @@ static CGFloat _DegToRad(CGFloat degrees)
 - (UIView*)firstView
 {
     if (_views.count >= 1) {
-        return _views[0];
+        JNPileViewWrapper* w = _views[0];
+        return w.view;
     }
     return nil;
 }
@@ -91,7 +112,8 @@ static CGFloat _DegToRad(CGFloat degrees)
 - (UIView*)secondView
 {
     if (_views.count >= 2) {
-        return _views[1];
+        JNPileViewWrapper* w = _views[1];
+        return w.view;
     }
     return nil;
 }
@@ -124,7 +146,8 @@ static CGFloat _DegToRad(CGFloat degrees)
     const CGPoint translation = [panGesture translationInView:self];
     
     /// The gesture will work with the top view on the pile
-    UIView* handledView = _views[0];
+    JNPileViewWrapper* wrapperForHandledView = _views[0];
+    UIView* handledView = wrapperForHandledView.view;
     
     /// Initial state
     if (panGesture.state == UIGestureRecognizerStateBegan) {
@@ -208,7 +231,7 @@ static CGFloat _DegToRad(CGFloat degrees)
         
         /// Should discard?
         if (_boundaryFlags.reachedDiscard) {
-            [self discardView:handledView];
+            [self discardView:wrapperForHandledView];
         } else {
             /// If not its not going to be discarded then re-center it
             [self centerView:handledView animated:YES];
@@ -232,45 +255,48 @@ static CGFloat _DegToRad(CGFloat degrees)
         return NO;
     }
 
-    /// Add the fetched view to the pile
-    UIView* fetchedView = [_delegate pileView:self viewForIndex:_pileFlags.fetchIndex];
-
-    /// Increase fetch index
-    ++_pileFlags.fetchIndex;
+    /// Create the wrapper and fetch the view
+    JNPileViewWrapper* wrapper = [JNPileViewWrapper new];
+    wrapper.view = [_delegate pileView:self viewForIndex:_pileFlags.fetchIndex];
+    wrapper.fetchIndex = _pileFlags.fetchIndex;
     
     /// Add the fetched view to the pile
-    [self addViewToPile:fetchedView];
+    [self addToPile:wrapper];
+    
+    /// Increase fetch index
+    ++_pileFlags.fetchIndex;
     
     return YES;
 }
 
-- (void)addViewToPile:(UIView*)view
+- (void)addToPile:(JNPileViewWrapper*)wrapper
 {
-    /// Add to the end of the array
-    [_views addObject:view];
-    
-    /// Add behind the view before
-    if (_views.count > 1) {
-        [self insertSubview:view belowSubview:_views[[_views indexOfObject:view] - 1]];
+    /// Add the view behind the last view on the pile
+    if (_views.count >= 1) {
+        JNPileViewWrapper* wLast = _views.lastObject;
+        [self insertSubview:wrapper.view belowSubview:wLast.view];
     }
     else {
-        [self addSubview:view];
+        [self addSubview:wrapper.view];
         
-        /// If this is the top view tell the delegate it will be shown
-        [self notifityViewWillBeShown:view];
+        /// (this is the top view, so tell the delegate it will be shown)
+        [self notifityViewWillBeShown:wrapper];
     }
     
+    /// Add to the end of the array
+    [_views addObject:wrapper];
+    
     /// Center it
-    [self centerView:view animated:NO];
+    [self centerView:wrapper.view animated:NO];
 }
 
-- (void)removeViewFromPileArray:(UIView*)view
+- (void)removeFromPile:(JNPileViewWrapper*)wrapper
 {
-    /// Grab original index
-    NSInteger idx = [_views indexOfObject:view];
+    /// Grab original index on the array
+    NSInteger idx = [_views indexOfObject:wrapper];
     
     /// Remove from the array
-    [_views removeObject:view];
+    [_views removeObject:wrapper];
     
     /// If we removed the top view on the pile tell the delegate we will show a new one (if theres any)
     if (idx == 0 && _views.count > 0) {
@@ -278,10 +304,10 @@ static CGFloat _DegToRad(CGFloat degrees)
     }
 }
 
-- (void)notifityViewWillBeShown:(UIView*)view
+- (void)notifityViewWillBeShown:(JNPileViewWrapper*)wrapper
 {
     if ([_delegate respondsToSelector:@selector(pileView:willShowView:forIndex:)]) {
-        [_delegate pileView:self willShowView:view forIndex:_pileFlags.fetchIndex - 1];
+        [_delegate pileView:self willShowView:wrapper.view forIndex:wrapper.fetchIndex];
     }
 }
 
@@ -299,7 +325,7 @@ static CGFloat _DegToRad(CGFloat degrees)
         view.center = CGPointMake(__CENTER_X, __CENTER_Y);
         view.transform = CGAffineTransformMakeRotation(0);
         
-        if (self.applyAlphaFactorForHandledView) {
+        if (_applyAlphaFactorForHandledView) {
             view.alpha = 1;
         }
     };
@@ -313,21 +339,21 @@ static CGFloat _DegToRad(CGFloat degrees)
     }
 }
 
-- (BOOL)discardView:(UIView*)view
+- (BOOL)discardView:(JNPileViewWrapper*)wrapper
 {
-    JNPileViewDiscardSide discardSide = (view.center.x < __CENTER_X) ? JNPileViewDiscardSideLeft : JNPileViewDiscardSideRight;
+    JNPileViewDiscardSide discardSide = (wrapper.view.center.x < __CENTER_X) ? JNPileViewDiscardSideLeft : JNPileViewDiscardSideRight;
     
     /// Ask the delegate if the view can be discarded
     BOOL canDiscard = YES;
     if ([_delegate respondsToSelector:@selector(pileView:shouldDiscardView:forSide:)]) {
-        canDiscard = [_delegate pileView:self shouldDiscardView:view forSide:discardSide];
+        canDiscard = [_delegate pileView:self shouldDiscardView:wrapper.view forSide:discardSide];
     }
     
     /// Discard if enabled
     if (canDiscard) {
         
         /// Remove it from the array
-        [self removeViewFromPileArray:view];
+        [self removeFromPile:wrapper];
         
         /// Fetch a new view
         [self fetchView];
@@ -335,37 +361,37 @@ static CGFloat _DegToRad(CGFloat degrees)
         /// Animate discard
         [UIView animateWithDuration:.3 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
             
-            CGPoint center = view.center;
+            CGPoint center = wrapper.view.center;
             
             /// Adds the distance from the view center to the super center
-            center.y += view.center.y - __CENTER_Y;
+            center.y += wrapper.view.center.y - __CENTER_Y;
             
             /// Get offscreen
             if (discardSide == JNPileViewDiscardSideLeft) {
-                center.x -= CGRectGetMaxX(view.frame);
+                center.x -= CGRectGetMaxX(wrapper.view.frame);
             } else {
-                center.x += self.bounds.size.width - view.frame.origin.x;
+                center.x += self.bounds.size.width - wrapper.view.frame.origin.x;
             }
-            view.center = center;
+            wrapper.view.center = center;
             
             /// Increase rotation a little bit
-            CGFloat angle = atan2f(view.transform.b, view.transform.a);
+            CGFloat angle = atan2f(wrapper.view.transform.b, wrapper.view.transform.a);
             angle *= 1.2f;
-            view.transform = CGAffineTransformMakeRotation(angle);
+            wrapper.view.transform = CGAffineTransformMakeRotation(angle);
             
             /// Make it dissapear
-            if (self.applyAlphaFactorForHandledView) {
-                view.alpha = 0;
+            if (_applyAlphaFactorForHandledView) {
+                wrapper.view.alpha = 0;
             }
             
         } completion:^(BOOL finished) {
             
             /// Remove it from super view
-            [view removeFromSuperview];
+            [wrapper.view removeFromSuperview];
             
             /// Tell delegate on completion
             if ([_delegate respondsToSelector:@selector(pileView:didDiscardView:forSide:)]) {
-                [_delegate pileView:self didDiscardView:view forSide:discardSide];
+                [_delegate pileView:self didDiscardView:wrapper.view forSide:discardSide];
             }
         }];
     }

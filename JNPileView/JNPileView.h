@@ -1,6 +1,5 @@
 //
 //  JNPileView.h
-//  InstaBeans
 //
 //  Created by Joao Neves on 20/11/13.
 //  Copyright (c) 2013 JHNeves. All rights reserved.
@@ -12,8 +11,8 @@
 
 typedef NS_ENUM(NSInteger, JNPileViewDiscardSide)
 {
-    JNPileViewDiscardSideLeft = -1,
     JNPileViewDiscardSideNone,
+    JNPileViewDiscardSideLeft,
     JNPileViewDiscardSideRight
 };
 
@@ -48,6 +47,8 @@ typedef NS_ENUM(NSInteger, JNPileViewDiscardSide)
 
 @end
 
+
+
 @interface JNPileView : UIView
 
 @property (nonatomic, weak) id<JNPileViewDelegate> delegate;
@@ -63,6 +64,7 @@ typedef NS_ENUM(NSInteger, JNPileViewDiscardSide)
 /// The rotation is attenuated as the touch gets closer to the center
 /// The default value is NO.
 @property (nonatomic, assign) BOOL attenuatesRotationBasedOnLocationOfTouch;
+
 
 /// The top view on the pile (the handled view)
 - (UIView*)firstView;

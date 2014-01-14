@@ -26,8 +26,7 @@
     UIButton* bt = [UIButton buttonWithType:UIButtonTypeSystem];
     [bt setTitle:@"reset" forState:UIControlStateNormal];
     bt.backgroundColor = [[UIColor blueColor] colorWithAlphaComponent:.3];
-    bt.showsTouchWhenHighlighted = YES;
-    bt.frame = CGRectMake(0, 10, 50, 30);
+    bt.frame = CGRectMake(5, self.view.bounds.size.height - 35, 50, 30);
     [bt addTarget:pv action:@selector(reloadData) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:bt];
 }
@@ -37,12 +36,12 @@
 
 - (NSInteger)numberOfViewsInPileView:(JNPileView *)pileView
 {
-    return 100;
+    return 20;
 }
 
 - (UIView*)pileView:(JNPileView *)pileView viewForIndex:(NSInteger)index
 {
-    static NSArray* colors;
+    static NSArray* colors = nil;
     if (!colors) {
         colors = @[UIColor.blueColor, UIColor.redColor,
                    UIColor.greenColor, UIColor.yellowColor,
