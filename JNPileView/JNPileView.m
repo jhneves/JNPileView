@@ -231,7 +231,10 @@ static CGFloat _DegToRad(CGFloat degrees)
         
         /// Should discard?
         if (_boundaryFlags.reachedDiscard) {
-            [self discardView:wrapperForHandledView];
+            if ([self discardView:wrapperForHandledView]) {
+                /// Fetch a new view if a view was discarded
+                [self fetchView];
+            }
         } else {
             /// If not its not going to be discarded then re-center it
             [self centerView:handledView animated:YES];
@@ -349,14 +352,10 @@ static CGFloat _DegToRad(CGFloat degrees)
         canDiscard = [_delegate pileView:self shouldDiscardView:wrapper.view forSide:discardSide];
     }
     
-    /// Discard if enabled
     if (canDiscard) {
         
-        /// Remove it from the array
+        /// Remove it from the pile
         [self removeFromPile:wrapper];
-        
-        /// Fetch a new view
-        [self fetchView];
         
         /// Animate discard
         [UIView animateWithDuration:.3 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
